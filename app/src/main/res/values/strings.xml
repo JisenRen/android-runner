@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">PKU Runner</string>
+    <string name="app_name">PKU Runner Cheater</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="turn_on">Press the button to turn on location service.</string>
+    <string name="turn_off">Press the button to turn off location service.</string>
+    <string name="value_default">0.00000</string>
+    <string name="perm_denied">Oops, our application needs the permission to access location.</string>
+    <string name="longitude_f">Longitude: %.5lf</string>
+    <string name="latitude_f">Latitude: %.5lf</string>
+    <string name="altitude_f">Altitude: %.5lf</string>
 </resources>
