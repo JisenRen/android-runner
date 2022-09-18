@@ -17,6 +17,10 @@
         android:supportsRtl="false"
         tools:targetApi="32">
         <service
+            android:name=".SensorListenService"
+            android:enabled="true"
+            android:exported="false" />
+        <service
             android:name=".MockLocationService"
             android:enabled="true"
             android:exported="false" />

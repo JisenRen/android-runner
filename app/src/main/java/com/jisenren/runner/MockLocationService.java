@@ -12,8 +12,6 @@ import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
 
 import java.util.concurrent.ExecutorService;
@@ -76,23 +74,34 @@ public class MockLocationService extends Service {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.S)
+    // @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         provider = new MockLocationProvider(LocationManager.GPS_PROVIDER, getBaseContext());
         Log.i(TAG, "Mock location service enabled!");
-        NotificationChannel channel = new NotificationChannel("jisenren_channel", "Mock Location",
-                NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel channel;
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                channel = new NotificationChannel("jisenren_channel", "Mock Location",
+                        NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("The notification channel for starting the foreground service of mock location.");
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
-        Notification notification = new NotificationCompat.Builder(this, channel.getId())
+        notification = new NotificationCompat.Builder(this, channel.getId())
                 .setOngoing(true)
                 .setSmallIcon(R.drawable.ic_launcher_background)
                 .setContentTitle("Runner program")
                 .setContentText("The location updating service started.")
                 .build();
+        } else {
+            notification = new NotificationCompat.Builder(this, DEFAULT_CHANNEL_ID)
+                    .setOngoing(true)
+                    .setSmallIcon(R.drawable.ic_launcher_background)
+                    .setContentTitle("Runner program")
+                    .setContentText("The location updating service started.")
+                    .build();
+        }
         startForeground(1337, notification);
         executor = Executors.newSingleThreadExecutor();
         Runnable task = new MockLocationThread(3.2, 500);

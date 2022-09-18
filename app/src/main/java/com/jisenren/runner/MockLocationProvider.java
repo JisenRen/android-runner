@@ -1,5 +1,6 @@
 package com.jisenren.runner;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
@@ -8,22 +9,25 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
 public class MockLocationProvider {
     private final String TAG = "MockLocationProvider";
     private final String providerName;
     private final Context ctx;
 
-    @RequiresApi(api = Build.VERSION_CODES.S)
+    @SuppressLint("WrongConstant")
     public MockLocationProvider(String name, Context ctx) {
         this.providerName = name;
         this.ctx = ctx;
 
         LocationManager lm = (LocationManager) ctx.getSystemService(
                 Context.LOCATION_SERVICE);
-        lm.addTestProvider(providerName, false, false, false, false, false,
-                    true, true, ProviderProperties.POWER_USAGE_LOW, ProviderProperties.ACCURACY_FINE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            lm.addTestProvider(providerName, false, false, false, false, false,
+                        true, true, ProviderProperties.POWER_USAGE_LOW, ProviderProperties.ACCURACY_FINE);
+        } else {
+            lm.addTestProvider(providerName, false, false, false, false, false,
+                    true, true, 1, 1);
+        }
 
         lm.setTestProviderEnabled(providerName, true);
         Log.i(TAG, "Mock location provider enabled!");
