@@ -27,6 +27,11 @@
             android:exported="false"
             android:foregroundServiceType="location" />
         <service
+            android:name=".ConstantLocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+        <service
             android:name=".LocationUpdateService"
             android:enabled="true"
             android:exported="false" />

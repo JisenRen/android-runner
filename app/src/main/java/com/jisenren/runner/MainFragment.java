@@ -13,8 +13,13 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
-public class MainFragment extends Fragment {
-    private boolean working = false;
+public class MainFragment extends Fragment implements View.OnClickListener {
+    // Cycling location service (original)
+    private boolean cyclingWorking = false;
+    private Button cyclingButton;
+    
+    // Constant location service (new)
+    private boolean constantWorking = false;
     private EditText latitudeInput;
     private EditText longitudeInput;
     private Button startButton;
@@ -41,6 +46,12 @@ public class MainFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.mainfrag, container, false);
         
+        // Setup cycling location button (original)
+        cyclingButton = view.findViewById(R.id.button);
+        cyclingButton.setText(R.string.turn_on);
+        cyclingButton.setOnClickListener(this);
+        
+        // Setup constant location inputs and buttons (new)
         latitudeInput = view.findViewById(R.id.latitude_input);
         longitudeInput = view.findViewById(R.id.longitude_input);
         startButton = view.findViewById(R.id.start_button);
@@ -49,20 +60,39 @@ public class MainFragment extends Fragment {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleStartButtonClick();
+                handleConstantStartButtonClick();
             }
         });
         
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleStopButtonClick();
+                handleConstantStopButtonClick();
             }
         });
         
         return view;
     }
 
+    // Handle cycling location button click (original service)
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onClick(View view) {
+        if (view.getId() == R.id.button) {
+            Intent intent = new Intent(requireActivity(), MockLocationService.class);
+            if (cyclingWorking) {
+                cyclingButton.setText(R.string.turn_on);
+                requireActivity().stopService(intent);
+                cyclingWorking = false;
+            } else {
+                cyclingButton.setText(R.string.turn_off);
+                requireActivity().startForegroundService(intent);
+                cyclingWorking = true;
+            }
+        }
+    }
+
+    // Constant location service methods
     private boolean validateAndSaveInputs() {
         String latStr = latitudeInput.getText().toString().trim();
         String lonStr = longitudeInput.getText().toString().trim();
@@ -94,28 +124,28 @@ public class MainFragment extends Fragment {
     }
 
     @SuppressLint("MissingPermission")
-    private void handleStartButtonClick() {
+    private void handleConstantStartButtonClick() {
         if (!validateAndSaveInputs()) {
             return;
         }
         
-        Intent intent = new Intent(requireActivity(), MockLocationService.class);
+        Intent intent = new Intent(requireActivity(), ConstantLocationService.class);
         intent.putExtra("latitude", latitude);
         intent.putExtra("longitude", longitude);
         requireActivity().startForegroundService(intent);
         
-        working = true;
+        constantWorking = true;
         startButton.setEnabled(false);
         stopButton.setEnabled(true);
         latitudeInput.setEnabled(false);
         longitudeInput.setEnabled(false);
     }
 
-    private void handleStopButtonClick() {
-        Intent intent = new Intent(requireActivity(), MockLocationService.class);
+    private void handleConstantStopButtonClick() {
+        Intent intent = new Intent(requireActivity(), ConstantLocationService.class);
         requireActivity().stopService(intent);
         
-        working = false;
+        constantWorking = false;
         startButton.setEnabled(true);
         stopButton.setEnabled(false);
         latitudeInput.setEnabled(true);
@@ -129,8 +159,13 @@ public class MainFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        if (working) {
+        // Stop both services if they are running
+        if (cyclingWorking) {
             Intent intent = new Intent(requireActivity(), MockLocationService.class);
+            requireActivity().stopService(intent);
+        }
+        if (constantWorking) {
+            Intent intent = new Intent(requireActivity(), ConstantLocationService.class);
             requireActivity().stopService(intent);
         }
         super.onDestroy();

@@ -27,18 +27,24 @@ public class MockLocationService extends Service {
     public MockLocationService() {}
 
     private class MockLocationThread implements Runnable {
-        double latitude;
-        double longitude;
+        double speed, sec_per_round, t1, t2, t3;
         int sleep_ms;
-        
-        public MockLocationThread(double lat, double lon, int freq) {
-            latitude = lat;
-            longitude = lon;
+        final double x_deg = 116.30715, y0_deg = 39.9859, y1_deg = 39.9867, r_earth = 6.371e6;
+        final double meter_per_deg = r_earth * Math.PI / 180.0;
+        final double radius = 0.00045 * meter_per_deg * Math.cos(y0_deg*Math.PI/180.0);
+        final double str_len = (y1_deg-y0_deg) * meter_per_deg;
+        final double circumference = 2*(str_len + Math.PI*radius);
+        public MockLocationThread(double speed_, int freq) {
+            speed = speed_;
             sleep_ms = freq;
-            Log.d(TAG, String.format("Mock location thread initialized with lat: %.5f, lon: %.5f", lat, lon));
+            sec_per_round = circumference / speed;
+            t1 = str_len / speed;
+            t2 = (str_len + Math.PI*radius) / speed;
+            t3 = (2 * str_len + Math.PI*radius) / speed;
+            Log.d(TAG, String.format("Time threshold: %.5f, %.5f, %.5f, %.5f", t1, t2, t3, sec_per_round));
         }
-        
         public void run() {
+            double run_time = 0.0, x, y, lat, lon;
             while (true) {
                 try {
                     Thread.sleep(sleep_ms);
@@ -46,8 +52,25 @@ public class MockLocationService extends Service {
                     e.printStackTrace();
                     break;
                 }
-                provider.pushLocation(latitude, longitude);
-                Log.d(TAG, String.format("Mock latitude: %.5f; Mock longitude: %.5f", latitude, longitude));
+                run_time += sleep_ms * 1e-3;
+                if (run_time>sec_per_round) run_time -= sec_per_round;
+                if (run_time < t1) {
+                    x = radius;
+                    y = speed*run_time;
+                } else if (run_time < t2) {
+                    x = radius * Math.cos(Math.PI * (run_time-t1) / (t2-t1));
+                    y = str_len + radius * Math.sin(Math.PI * (run_time-t1) / (t2-t1));
+                } else if (run_time < t3) {
+                    x = -radius;
+                    y = str_len - speed*(run_time-t2);
+                } else {
+                    x = -radius * Math.cos(Math.PI * (run_time-t3) / (sec_per_round-t3));
+                    y = -radius * Math.sin(Math.PI * (run_time-t3) / (sec_per_round-t3));
+                }
+                lon = x_deg + x / meter_per_deg / Math.cos(y1_deg*Math.PI/180.0);
+                lat = y0_deg + y / meter_per_deg;
+                provider.pushLocation(lat, lon);
+                Log.d(TAG, String.format("Mock latitude: %.5f; Mock longitude: %.5f", lat, lon));
             }
         }
     }
@@ -56,14 +79,8 @@ public class MockLocationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        
-        // Get latitude and longitude from intent, with defaults if not provided
-        double latitude = intent.getDoubleExtra("latitude", 39.9859);
-        double longitude = intent.getDoubleExtra("longitude", 116.30715);
-        
         provider = new MockLocationProvider(LocationManager.GPS_PROVIDER, getBaseContext());
-        Log.i(TAG, String.format("Mock location service enabled with lat: %.5f, lon: %.5f", latitude, longitude));
-        
+        Log.i(TAG, "Mock location service enabled!");
         NotificationChannel channel;
         Notification notification;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -88,7 +105,7 @@ public class MockLocationService extends Service {
         }
         startForeground(1337, notification);
         executor = Executors.newSingleThreadExecutor();
-        Runnable task = new MockLocationThread(latitude, longitude, 500);
+        Runnable task = new MockLocationThread(3.2, 500);
         future = executor.submit(task);
         return START_STICKY;
     }
