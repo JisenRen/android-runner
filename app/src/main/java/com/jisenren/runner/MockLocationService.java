@@ -79,6 +79,18 @@ public class MockLocationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
+        
+        // Clean up existing resources if service is restarted
+        if (future != null) {
+            future.cancel(true);
+        }
+        if (executor != null) {
+            executor.shutdown();
+        }
+        if (provider != null) {
+            provider.shutdown();
+        }
+        
         provider = new MockLocationProvider(LocationManager.GPS_PROVIDER, getBaseContext());
         Log.i(TAG, "Mock location service enabled!");
         NotificationChannel channel;
@@ -119,8 +131,14 @@ public class MockLocationService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "Mock location service disabled!");
-        future.cancel(true);
-        executor.shutdown();
-        provider.shutdown();
+        if (future != null) {
+            future.cancel(true);
+        }
+        if (executor != null) {
+            executor.shutdown();
+        }
+        if (provider != null) {
+            provider.shutdown();
+        }
     }
 }

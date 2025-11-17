@@ -99,6 +99,17 @@ public class ConstantLocationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         
+        // Clean up existing resources if service is restarted
+        if (future != null) {
+            future.cancel(true);
+        }
+        if (executor != null) {
+            executor.shutdown();
+        }
+        if (provider != null) {
+            provider.shutdown();
+        }
+        
         // Get latitude and longitude from intent, with defaults if not provided
         double latitude = intent.getDoubleExtra("latitude", 39.9859);
         double longitude = intent.getDoubleExtra("longitude", 116.30715);
