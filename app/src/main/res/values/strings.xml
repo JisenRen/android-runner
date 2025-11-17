@@ -19,4 +19,9 @@
     <string name="invalid_input">Please enter valid numerical values for both latitude and longitude.</string>
     <string name="cycling_location_title">Cycling Location (Fixed Path)</string>
     <string name="constant_location_title">Constant Location (User Input)</string>
+    <string name="random_walking_label">Enable Random Walking Mode</string>
+    <string name="step_length_label">Step Length (meters):</string>
+    <string name="step_length_hint">Enter step length in meters (e.g., 5.0)</string>
+    <string name="invalid_step_length">Invalid step length! Must be a positive number.</string>
+    <string name="step_length_required">Step length is required when random walking is enabled.</string>
 </resources>

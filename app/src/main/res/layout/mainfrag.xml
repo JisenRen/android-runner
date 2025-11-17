@@ -81,6 +81,33 @@
             android:textSize="16sp"
             android:padding="12dp" />
 
+        <CheckBox
+            android:id="@+id/random_walking_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/random_walking_label"
+            android:textSize="16sp"
+            android:padding="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/step_length_label"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/step_length_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal|numberSigned"
+            android:hint="@string/step_length_hint"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:enabled="false" />
+
         <Button
             android:id="@+id/start_button"
             android:layout_width="match_parent"

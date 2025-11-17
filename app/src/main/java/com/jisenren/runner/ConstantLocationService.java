@@ -14,6 +14,7 @@ import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -30,12 +31,24 @@ public class ConstantLocationService extends Service {
         double latitude;
         double longitude;
         int sleep_ms;
+        boolean randomWalking;
+        double stepLength;
+        Random random;
+        final double r_earth = 6.371e6; // Earth radius in meters
+        final double meter_per_deg = r_earth * Math.PI / 180.0;
         
-        public ConstantLocationThread(double lat, double lon, int freq) {
+        public ConstantLocationThread(double lat, double lon, int freq, boolean randomWalking, double stepLength) {
             latitude = lat;
             longitude = lon;
             sleep_ms = freq;
-            Log.d(TAG, String.format("Constant location thread initialized with lat: %.5f, lon: %.5f", lat, lon));
+            this.randomWalking = randomWalking;
+            this.stepLength = stepLength;
+            this.random = new Random();
+            if (randomWalking) {
+                Log.d(TAG, String.format("Random walking thread initialized with start lat: %.5f, lon: %.5f, step length: %.2f m", lat, lon, stepLength));
+            } else {
+                Log.d(TAG, String.format("Constant location thread initialized with lat: %.5f, lon: %.5f", lat, lon));
+            }
         }
         
         public void run() {
@@ -46,8 +59,38 @@ public class ConstantLocationService extends Service {
                     e.printStackTrace();
                     break;
                 }
+                
+                if (randomWalking) {
+                    // Move in a random direction by step length
+                    // Generate random angle in radians (0 to 2*PI)
+                    double angle = random.nextDouble() * 2 * Math.PI;
+                    
+                    // Calculate displacement in meters
+                    double deltaLatMeters = stepLength * Math.cos(angle);
+                    double deltaLonMeters = stepLength * Math.sin(angle);
+                    
+                    // Convert meters to degrees
+                    double deltaLat = deltaLatMeters / meter_per_deg;
+                    double deltaLon = deltaLonMeters / (meter_per_deg * Math.cos(Math.toRadians(latitude)));
+                    
+                    // Update location
+                    latitude += deltaLat;
+                    longitude += deltaLon;
+                    
+                    // Keep latitude within valid range
+                    if (latitude > 90.0) latitude = 90.0;
+                    if (latitude < -90.0) latitude = -90.0;
+                    
+                    // Wrap longitude around if it goes out of range
+                    if (longitude > 180.0) longitude -= 360.0;
+                    if (longitude < -180.0) longitude += 360.0;
+                    
+                    Log.d(TAG, String.format("Random walking - latitude: %.5f; longitude: %.5f", latitude, longitude));
+                } else {
+                    Log.d(TAG, String.format("Constant latitude: %.5f; Constant longitude: %.5f", latitude, longitude));
+                }
+                
                 provider.pushLocation(latitude, longitude);
-                Log.d(TAG, String.format("Constant latitude: %.5f; Constant longitude: %.5f", latitude, longitude));
             }
         }
     }
@@ -59,12 +102,24 @@ public class ConstantLocationService extends Service {
         // Get latitude and longitude from intent, with defaults if not provided
         double latitude = intent.getDoubleExtra("latitude", 39.9859);
         double longitude = intent.getDoubleExtra("longitude", 116.30715);
+        boolean randomWalking = intent.getBooleanExtra("randomWalking", false);
+        double stepLength = intent.getDoubleExtra("stepLength", 5.0);
         
         provider = new MockLocationProvider(LocationManager.GPS_PROVIDER, getBaseContext());
-        Log.i(TAG, String.format("Constant location service enabled with lat: %.5f, lon: %.5f", latitude, longitude));
+        
+        String serviceMode = randomWalking ? "Random Walking" : "Constant Location";
+        Log.i(TAG, String.format("%s service enabled with lat: %.5f, lon: %.5f", serviceMode, latitude, longitude));
+        if (randomWalking) {
+            Log.i(TAG, String.format("Step length: %.2f meters", stepLength));
+        }
         
         NotificationChannel channel;
         Notification notification;
+        String notificationTitle = randomWalking ? "Random Walking Service" : "Constant Location Service";
+        String notificationText = randomWalking ? 
+            String.format("Random walking from (%.5f, %.5f)", latitude, longitude) :
+            "The constant location service started.";
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             channel = new NotificationChannel("constant_location_channel", "Constant Location",
                     NotificationManager.IMPORTANCE_DEFAULT);
@@ -74,20 +129,20 @@ public class ConstantLocationService extends Service {
             notification = new NotificationCompat.Builder(this, channel.getId())
                     .setOngoing(true)
                     .setSmallIcon(R.drawable.ic_launcher_background)
-                    .setContentTitle("Constant Location Service")
-                    .setContentText("The constant location service started.")
+                    .setContentTitle(notificationTitle)
+                    .setContentText(notificationText)
                     .build();
         } else {
             notification = new NotificationCompat.Builder(this, DEFAULT_CHANNEL_ID)
                     .setOngoing(true)
                     .setSmallIcon(R.drawable.ic_launcher_background)
-                    .setContentTitle("Constant Location Service")
-                    .setContentText("The constant location service started.")
+                    .setContentTitle(notificationTitle)
+                    .setContentText(notificationText)
                     .build();
         }
         startForeground(1338, notification);
         executor = Executors.newSingleThreadExecutor();
-        Runnable task = new ConstantLocationThread(latitude, longitude, 500);
+        Runnable task = new ConstantLocationThread(latitude, longitude, 500, randomWalking, stepLength);
         future = executor.submit(task);
         return START_STICKY;
     }

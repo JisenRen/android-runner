@@ -8,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -22,10 +24,13 @@ public class MainFragment extends Fragment implements View.OnClickListener {
     private boolean constantWorking = false;
     private EditText latitudeInput;
     private EditText longitudeInput;
+    private CheckBox randomWalkingCheckbox;
+    private EditText stepLengthInput;
     private Button startButton;
     private Button stopButton;
     private double latitude = 0.0;
     private double longitude = 0.0;
+    private double stepLength = 0.0;
 
     public MainFragment() {}
 
@@ -54,8 +59,18 @@ public class MainFragment extends Fragment implements View.OnClickListener {
         // Setup constant location inputs and buttons (new)
         latitudeInput = view.findViewById(R.id.latitude_input);
         longitudeInput = view.findViewById(R.id.longitude_input);
+        randomWalkingCheckbox = view.findViewById(R.id.random_walking_checkbox);
+        stepLengthInput = view.findViewById(R.id.step_length_input);
         startButton = view.findViewById(R.id.start_button);
         stopButton = view.findViewById(R.id.stop_button);
+        
+        // Enable/disable step length input based on checkbox state
+        randomWalkingCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                stepLengthInput.setEnabled(isChecked);
+            }
+        });
         
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -96,6 +111,8 @@ public class MainFragment extends Fragment implements View.OnClickListener {
     private boolean validateAndSaveInputs() {
         String latStr = latitudeInput.getText().toString().trim();
         String lonStr = longitudeInput.getText().toString().trim();
+        boolean randomWalkingEnabled = randomWalkingCheckbox.isChecked();
+        String stepLengthStr = stepLengthInput.getText().toString().trim();
         
         if (TextUtils.isEmpty(latStr) || TextUtils.isEmpty(lonStr)) {
             Toast.makeText(requireContext(), R.string.invalid_input, Toast.LENGTH_LONG).show();
@@ -120,6 +137,25 @@ public class MainFragment extends Fragment implements View.OnClickListener {
             return false;
         }
         
+        // Validate step length if random walking is enabled
+        if (randomWalkingEnabled) {
+            if (TextUtils.isEmpty(stepLengthStr)) {
+                Toast.makeText(requireContext(), R.string.step_length_required, Toast.LENGTH_LONG).show();
+                return false;
+            }
+            
+            try {
+                stepLength = Double.parseDouble(stepLengthStr);
+                if (stepLength <= 0.0) {
+                    Toast.makeText(requireContext(), R.string.invalid_step_length, Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(requireContext(), R.string.invalid_step_length, Toast.LENGTH_LONG).show();
+                return false;
+            }
+        }
+        
         return true;
     }
 
@@ -132,6 +168,10 @@ public class MainFragment extends Fragment implements View.OnClickListener {
         Intent intent = new Intent(requireActivity(), ConstantLocationService.class);
         intent.putExtra("latitude", latitude);
         intent.putExtra("longitude", longitude);
+        intent.putExtra("randomWalking", randomWalkingCheckbox.isChecked());
+        if (randomWalkingCheckbox.isChecked()) {
+            intent.putExtra("stepLength", stepLength);
+        }
         requireActivity().startForegroundService(intent);
         
         constantWorking = true;
@@ -139,6 +179,8 @@ public class MainFragment extends Fragment implements View.OnClickListener {
         stopButton.setEnabled(true);
         latitudeInput.setEnabled(false);
         longitudeInput.setEnabled(false);
+        randomWalkingCheckbox.setEnabled(false);
+        stepLengthInput.setEnabled(false);
     }
 
     private void handleConstantStopButtonClick() {
@@ -150,6 +192,8 @@ public class MainFragment extends Fragment implements View.OnClickListener {
         stopButton.setEnabled(false);
         latitudeInput.setEnabled(true);
         longitudeInput.setEnabled(true);
+        randomWalkingCheckbox.setEnabled(true);
+        stepLengthInput.setEnabled(randomWalkingCheckbox.isChecked());
     }
 
     @Override
