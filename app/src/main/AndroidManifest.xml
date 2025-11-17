@@ -9,6 +9,7 @@
         android:name="android.permission.ACCESS_MOCK_LOCATION"
         tools:ignore="MockLocation,ProtectedPermissions" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <application
         android:icon="@mipmap/ic_launcher"
@@ -23,7 +24,8 @@
         <service
             android:name=".MockLocationService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="location" />
         <service
             android:name=".LocationUpdateService"
             android:enabled="true"

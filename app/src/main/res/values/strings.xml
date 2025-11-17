@@ -8,4 +8,13 @@
     <string name="longitude_f">Longitude: %.5lf</string>
     <string name="latitude_f">Latitude: %.5lf</string>
     <string name="altitude_f">Altitude: %.5lf</string>
+    <string name="latitude_label">Latitude (degrees):</string>
+    <string name="longitude_label">Longitude (degrees):</string>
+    <string name="latitude_hint">Enter latitude (-90 to 90)</string>
+    <string name="longitude_hint">Enter longitude (-180 to 180)</string>
+    <string name="start_button">Start</string>
+    <string name="stop_button">Stop</string>
+    <string name="invalid_latitude">Invalid latitude! Must be between -90 and 90 degrees.</string>
+    <string name="invalid_longitude">Invalid longitude! Must be between -180 and 180 degrees.</string>
+    <string name="invalid_input">Please enter valid numerical values for both latitude and longitude.</string>
 </resources>
